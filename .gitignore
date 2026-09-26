@@ -1,0 +1,6 @@
+*.session
+*.session-journal
+config.json
+__pycache__/
+.venv/
+.DS_Store
