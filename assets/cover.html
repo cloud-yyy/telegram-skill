@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>telegram-skill cover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #3aa8e8;
+    --green: #56d364;
+    --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 640px; background: var(--bg); }
+  body {
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    gap: 56px;
+    align-items: center;
+    padding: 0 72px;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 500px at 85% 20%, rgba(58, 168, 232, .12), transparent 60%),
+      var(--bg);
+  }
+  .badge {
+    display: inline-block;
+    font: 500 15px/1 "JetBrains Mono", monospace;
+    letter-spacing: .08em;
+    color: var(--blue);
+    border: 1px solid rgba(58, 168, 232, .45);
+    border-radius: 999px;
+    padding: 9px 14px;
+  }
+  h1 {
+    margin-top: 26px;
+    font: 700 54px/1.05 "JetBrains Mono", monospace;
+    letter-spacing: -.02em;
+  }
+  p.sub {
+    margin-top: 20px;
+    font-size: 26px;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+  p.sub b { color: var(--text); font-weight: 500; }
+  .agents {
+    margin-top: 34px;
+    font: 400 17px/1.5 "JetBrains Mono", monospace;
+    color: var(--muted);
+  }
+  .term {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
+  }
+  .bar { display: flex; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .bar i { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
+  pre {
+    padding: 22px 24px 26px;
+    font: 400 16px/1.7 "JetBrains Mono", monospace;
+    color: var(--text);
+    white-space: pre;
+  }
+  .p { color: var(--green); }
+  .c { color: var(--blue); }
+  .m { color: var(--muted); }
+  .hl { background: rgba(58, 168, 232, .14); display: inline-block; width: 100%; }
+  .e { color: var(--red); }
+</style>
+</head>
+<body>
+  <section>
+    <span class="badge">READ-ONLY</span>
+    <h1>telegram-skill</h1>
+    <p class="sub">Let your AI agent <b>read and search</b> your Telegram. Nothing gets sent.</p>
+    <p class="agents">Claude Code · Codex · Cursor<br>Gemini CLI · any Agent Skills host</p>
+  </section>
+
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="p">$</span> tg.py search <span class="c">"invoice"</span> --chat Work
+<span class="m">#1042 Sep 12 14:03</span> Alice: invoice is in the drive
+
+<span class="p">$</span> tg.py context Work 1042 --before 1 --after 1
+<span class="m">#1041 Sep 12 13:58</span> Bob: where's the August invoice?
+<span class="hl"><span class="c">&gt;&gt;</span> <span class="m">#1042 Sep 12 14:03</span> Alice: invoice is in the drive</span>
+<span class="m">#1043 Sep 12 14:05</span> Bob: got it, thanks
+
+<span class="m"># anything but reads is stopped at the client:</span>
+<span class="e">blocked non-read Telegram method:</span>
+<span class="e">messages.SendMessageRequest</span></pre>
+  </div>
+</body>
+</html>
