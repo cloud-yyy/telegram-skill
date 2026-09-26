@@ -1,12 +1,12 @@
 {
   "name": "telegram-skill",
   "owner": { "name": "cloud-yyy", "url": "https://github.com/cloud-yyy" },
-  "description": "Read-only Telegram access for AI agents.",
+  "description": "Telegram access for AI agents.",
   "plugins": [
     {
       "name": "telegram",
       "source": "./",
-      "description": "Read-only access to your Telegram: list chats, read history, search, and show context around messages.",
+      "description": "Telegram for AI agents: list chats, read history, search messages, and see the context around them.",
       "category": "productivity"
     }
   ]

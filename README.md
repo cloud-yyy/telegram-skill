@@ -1,12 +1,16 @@
 # telegram-skill
 
-![telegram-skill: read-only Telegram for AI agents](assets/cover.png)
+![telegram-skill: Telegram for AI agents](assets/cover.png)
 
-Read-only Telegram access for AI agents. Your agent can list chats, read history, search messages, and pull up the conversation around a result. It can't send, edit, delete, or mark anything as read.
+Telegram access for AI agents. Your agent can list chats, read history, search messages, and pull up the conversation around a result.
+
+For now it only reads: sending is planned.
 
 Works with Claude Code, Codex, Cursor, Gemini CLI, and other agents that support [Agent Skills](https://agentskills.io).
 
-## How it stays read-only
+## Safety
+
+Until sending lands, two things keep the agent to reading:
 
 - **Allowlist in the client.** Every request to Telegram passes a list of about 20 read methods ([guard.py](skills/telegram-reader/scripts/tgreader/guard.py)). Anything else fails before it leaves your machine. The CLI has no write commands to begin with.
 - **Hook for the agent.** Plugin installs add a `PreToolUse` hook that blocks the agent from reading the session files or editing the CLI ([protect_session.py](hooks/protect_session.py)).

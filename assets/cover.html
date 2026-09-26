@@ -80,25 +80,24 @@
 </head>
 <body>
   <section>
-    <span class="badge">READ-ONLY</span>
+    <span class="badge">AGENT SKILL</span>
     <h1>telegram-skill</h1>
-    <p class="sub">Let your AI agent <b>read and search</b> your Telegram. Nothing gets sent.</p>
+    <p class="sub">Give your AI agent <b>access to your Telegram</b>: chats, history, search.</p>
     <p class="agents">Claude Code · Codex · Cursor<br>Gemini CLI · any Agent Skills host</p>
   </section>
 
   <div class="term">
     <div class="bar"><i></i><i></i><i></i></div>
-<pre><span class="p">$</span> tg.py search <span class="c">"invoice"</span> --chat Work
+<pre><span class="p">$</span> tg.py chats work
+<span class="m">-1001234  group</span>  Work  unread=3
+
+<span class="p">$</span> tg.py search <span class="c">"invoice"</span> --chat Work
 <span class="m">#1042 Sep 12 14:03</span> Alice: invoice is in the drive
 
 <span class="p">$</span> tg.py context Work 1042 --before 1 --after 1
 <span class="m">#1041 Sep 12 13:58</span> Bob: where's the August invoice?
 <span class="hl"><span class="c">&gt;&gt;</span> <span class="m">#1042 Sep 12 14:03</span> Alice: invoice is in the drive</span>
-<span class="m">#1043 Sep 12 14:05</span> Bob: got it, thanks
-
-<span class="m"># anything but reads is stopped at the client:</span>
-<span class="e">blocked non-read Telegram method:</span>
-<span class="e">messages.SendMessageRequest</span></pre>
+<span class="m">#1043 Sep 12 14:05</span> Bob: got it, thanks</pre>
   </div>
 </body>
 </html>
