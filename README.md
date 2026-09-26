@@ -1,5 +1,3 @@
-# telegram-skill
-
 ![telegram-skill: Telegram for AI agents](assets/cover.png)
 
 Telegram access for AI agents. Your agent can list chats, read history, search messages, and pull up the conversation around a result.
