@@ -40,7 +40,7 @@ from pathlib import Path
 
 from telethon import TelegramClient, errors, utils
 from telethon.sessions import StringSession
-from telethon.tl import types
+from telethon.tl import functions, types
 
 HOME = Path(os.environ.get("TG_SKILL_HOME") or Path.home() / ".config" / "telegram-skill")
 CONFIG_FILE = HOME / "config.json"
@@ -76,6 +76,7 @@ READ_METHODS = frozenset({
 # Extra methods needed only by `login` to create the session.
 LOGIN_METHODS = READ_METHODS | {
     "auth.SendCodeRequest",
+    "auth.ResendCodeRequest",
     "auth.SignInRequest",
     "auth.CheckPasswordRequest",
     "account.GetPasswordRequest",
@@ -332,6 +333,27 @@ def print_messages(args, header, records, marker_id=None, with_chat=False):
 # Commands
 # ---------------------------------------------------------------------------
 
+def describe_code_delivery(sent):
+    t = sent.type
+    where = {
+        types.auth.SentCodeTypeApp: "in the Telegram app on your other devices (chat \"Telegram\")",
+        types.auth.SentCodeTypeSms: "by SMS",
+        types.auth.SentCodeTypeFirebaseSms: "by SMS",
+        types.auth.SentCodeTypeCall: "by phone call",
+        types.auth.SentCodeTypeFlashCall: "by flash call (the code is in the caller's number)",
+        types.auth.SentCodeTypeMissedCall: "by missed call (the code is the last digits of the caller's number)",
+        types.auth.SentCodeTypeFragmentSms: "via fragment.com (anonymous number)",
+    }.get(type(t))
+    if isinstance(t, types.auth.SentCodeTypeEmailCode):
+        where = f"to email {t.email_pattern}"
+    elif isinstance(t, types.auth.SentCodeTypeSetUpEmailRequired):
+        where = "nowhere yet: Telegram requires a login email; set it up in the official app first"
+    msg = f"Code sent {where or type(t).__name__}."
+    if sent.next_type:
+        msg += f" If it doesn't arrive, press Enter to resend ({type(sent.next_type).__name__.removeprefix('CodeType')})."
+    return msg
+
+
 async def cmd_login(args):
     HOME.mkdir(parents=True, exist_ok=True)
     HOME.chmod(0o700)
@@ -344,9 +366,20 @@ async def cmd_login(args):
         CONFIG_FILE.chmod(0o600)
 
     client = make_client(LOGIN_METHODS, api_id, api_hash)
-    await client.start(phone=lambda: input("Phone number (+...): "),
-                       code_callback=lambda: input("Login code from Telegram: "),
-                       password=lambda: getpass.getpass("2FA password: "))
+    await client.connect()
+    if not await client.is_user_authorized():
+        phone = input("Phone number (+...): ").strip()
+        sent = await client.send_code_request(phone)
+        while True:
+            print(describe_code_delivery(sent))
+            code = input("Login code (empty = resend another way): ").strip()
+            if code:
+                break
+            sent = await client(functions.auth.ResendCodeRequest(phone, sent.phone_code_hash))
+        try:
+            await client.sign_in(phone, code, phone_code_hash=sent.phone_code_hash)
+        except errors.SessionPasswordNeededError:
+            await client.sign_in(password=getpass.getpass("2FA password: "))
     me = await client.get_me()
     await client.disconnect()
     session_file = SESSION_PATH.with_suffix(".session")
