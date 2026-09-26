@@ -1,0 +1,10 @@
+{
+  "name": "telegram",
+  "version": "0.1.0",
+  "description": "Read-only access to your Telegram: list chats, read history, search, and show context around messages.",
+  "author": { "name": "cloud-yyy", "url": "https://github.com/cloud-yyy" },
+  "homepage": "https://github.com/cloud-yyy/telegram-skill",
+  "repository": "https://github.com/cloud-yyy/telegram-skill",
+  "license": "MIT",
+  "keywords": ["telegram", "read-only", "search", "messages"]
+}
