@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --quiet --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["telethon>=1.40,<2"]
+# dependencies = ["telethon>=1.40,<2", "qrcode>=7"]
 # ///
 """Read-only Telegram CLI for AI agents.
 
@@ -11,7 +11,7 @@ is rejected before it reaches the network. The script also has no commands
 that would try to write in the first place.
 
 Usage:
-  tg.py login                              one-time interactive sign-in
+  tg.py login [--code]                     one-time sign-in (QR by default)
   tg.py whoami
   tg.py chats [QUERY] [--limit N]
   tg.py history CHAT [--limit N] [--before-id ID | --after-id ID]
@@ -77,10 +77,13 @@ READ_METHODS = frozenset({
 LOGIN_METHODS = READ_METHODS | {
     "auth.SendCodeRequest",
     "auth.ResendCodeRequest",
+    "auth.ExportLoginTokenRequest",
+    "auth.ImportLoginTokenRequest",
     "auth.SignInRequest",
     "auth.CheckPasswordRequest",
     "account.GetPasswordRequest",
     "updates.GetDifferenceRequest",
+    "updates.GetChannelDifferenceRequest",
 }
 
 # Transport wrappers Telethon puts around the real request.
@@ -126,11 +129,11 @@ def load_api_credentials():
             os.environ.get("TG_API_HASH") or cfg.get("api_hash"))
 
 
-def make_client(allowed, api_id, api_hash):
+def make_client(allowed, api_id, api_hash, receive_updates=False):
     session_string = os.environ.get("TG_SESSION_STRING")
     session = StringSession(session_string) if session_string else str(SESSION_PATH)
     client = TelegramClient(session, int(api_id), api_hash,
-                            receive_updates=False, flood_sleep_threshold=30)
+                            receive_updates=receive_updates, flood_sleep_threshold=30)
     install_guard(client, allowed)
     return client
 
@@ -354,6 +357,34 @@ def describe_code_delivery(sent):
     return msg
 
 
+async def login_with_qr(client):
+    import qrcode
+
+    qr = await client.qr_login()
+    while True:
+        print("\nScan with the Telegram app: Settings -> Devices -> Link Desktop Device")
+        code = qrcode.QRCode(border=1)
+        code.add_data(qr.url)
+        code.print_ascii(invert=True)
+        try:
+            await qr.wait(timeout=max(5, (qr.expires - datetime.now(qr.expires.tzinfo)).total_seconds()))
+            return
+        except asyncio.TimeoutError:
+            await qr.recreate()
+
+
+async def login_with_code(client):
+    phone = input("Phone number (+...): ").strip()
+    sent = await client.send_code_request(phone)
+    while True:
+        print(describe_code_delivery(sent))
+        code = input("Login code (empty = resend another way): ").strip()
+        if code:
+            break
+        sent = await client(functions.auth.ResendCodeRequest(phone, sent.phone_code_hash))
+    await client.sign_in(phone, code, phone_code_hash=sent.phone_code_hash)
+
+
 async def cmd_login(args):
     HOME.mkdir(parents=True, exist_ok=True)
     HOME.chmod(0o700)
@@ -365,19 +396,12 @@ async def cmd_login(args):
         CONFIG_FILE.write_text(json.dumps({"api_id": int(api_id), "api_hash": api_hash}))
         CONFIG_FILE.chmod(0o600)
 
-    client = make_client(LOGIN_METHODS, api_id, api_hash)
+    # QR login waits for an UpdateLoginToken, so this client listens for updates.
+    client = make_client(LOGIN_METHODS, api_id, api_hash, receive_updates=True)
     await client.connect()
     if not await client.is_user_authorized():
-        phone = input("Phone number (+...): ").strip()
-        sent = await client.send_code_request(phone)
-        while True:
-            print(describe_code_delivery(sent))
-            code = input("Login code (empty = resend another way): ").strip()
-            if code:
-                break
-            sent = await client(functions.auth.ResendCodeRequest(phone, sent.phone_code_hash))
         try:
-            await client.sign_in(phone, code, phone_code_hash=sent.phone_code_hash)
+            await (login_with_code(client) if args.code else login_with_qr(client))
         except errors.SessionPasswordNeededError:
             await client.sign_in(password=getpass.getpass("2FA password: "))
     me = await client.get_me()
@@ -496,7 +520,8 @@ def build_parser():
     p = argparse.ArgumentParser(prog="tg.py", description="Read-only Telegram CLI.")
     sub = p.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("login", parents=[common], help="interactive one-time sign-in")
+    s = sub.add_parser("login", parents=[common], help="interactive one-time sign-in (QR code)")
+    s.add_argument("--code", action="store_true", help="sign in with a code sent to your phone instead")
     sub.add_parser("whoami", parents=[common], help="show the signed-in account")
 
     s = sub.add_parser("chats", parents=[common], help="list chats, optionally filtered by title")
