@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT") or Path(__file__).resolve().parent.parent)
-SCRIPTS_DIR = PLUGIN_ROOT / "skills" / "telegram-reader" / "scripts"
+SCRIPTS_DIR = PLUGIN_ROOT / "skills" / "telegram" / "scripts"
 SESSION_DIR = Path(os.environ.get("TG_SKILL_HOME") or Path.home() / ".config" / "telegram-skill")
 
 # `[uv run [--quiet] [--script]] [python3] <path>/tg.py <args>` with no shell operators,
@@ -45,7 +45,7 @@ def variants(path):
 
 PROTECTED = {
     "the Telegram session": variants(SESSION_DIR) | {".config/telegram-skill", "TG_SESSION_STRING"},
-    "the telegram-reader scripts": variants(SCRIPTS_DIR),
+    "the telegram skill scripts": variants(SCRIPTS_DIR),
 }
 
 
@@ -81,7 +81,7 @@ def main():
     text = "\n".join(strings(tool_input))
     for what, needles in PROTECTED.items():
         if any(n in text for n in needles):
-            print(f"Blocked: this call touches {what}. Use the telegram-reader CLI "
+            print(f"Blocked: this call touches {what}. Use the telegram skill CLI "
                   f"(`{SCRIPTS_DIR}/tg.py <command>`) and nothing else to access Telegram. "
                   "If the session is missing, ask the user to run `tg.py login` in their terminal.",
                   file=sys.stderr)

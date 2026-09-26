@@ -12,7 +12,7 @@ Works with Claude Code, Codex, Cursor, Gemini CLI, and other agents that support
 
 Until sending lands, two things keep the agent to reading:
 
-- **Allowlist in the client.** Every request to Telegram passes a list of about 20 read methods ([guard.py](skills/telegram-reader/scripts/tgreader/guard.py)). Anything else fails before it leaves your machine. The CLI has no write commands to begin with.
+- **Allowlist in the client.** Every request to Telegram passes a list of about 20 read methods ([guard.py](skills/telegram/scripts/tgskill/guard.py)). Anything else fails before it leaves your machine. The CLI has no write commands to begin with.
 - **Hook for the agent.** Plugin installs add a `PreToolUse` hook that blocks the agent from reading the session files or editing the CLI ([protect_session.py](hooks/protect_session.py)).
 
 The hook is a guard rail, not a sandbox. The session file lives under your OS user and grants full account access. You can revoke it any time in Telegram: Settings → Devices.
@@ -51,7 +51,7 @@ Once, in your own terminal:
 
    ```
    git clone https://github.com/cloud-yyy/telegram-skill
-   telegram-skill/skills/telegram-reader/scripts/tg.py login
+   telegram-skill/skills/telegram/scripts/tg.py login
    ```
 
    Pick QR code (scan in Telegram → Settings → Devices → Link Desktop Device) or phone code.
@@ -66,7 +66,7 @@ Ask in plain language:
 - "Find where we discussed the invoice in the Work chat and show what was said around it."
 - "Summarize the last 50 messages in @some_channel."
 
-Commands the agent uses are documented in [SKILL.md](skills/telegram-reader/SKILL.md).
+Commands the agent uses are documented in [SKILL.md](skills/telegram/SKILL.md).
 
 ## License
 

@@ -34,10 +34,10 @@ import sys
 
 from telethon import errors
 
-from tgreader.client import CliError, open_client
-from tgreader.commands import cmd_chats, cmd_context, cmd_history, cmd_search, cmd_whoami
-from tgreader.guard import ReadOnlyViolation
-from tgreader.login import cmd_login
+from tgskill.client import CliError, open_client
+from tgskill.commands import cmd_chats, cmd_context, cmd_history, cmd_search, cmd_whoami
+from tgskill.guard import ReadOnlyViolation
+from tgskill.login import cmd_login
 
 
 def build_parser():

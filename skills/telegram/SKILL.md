@@ -1,9 +1,9 @@
 ---
-name: telegram-reader
+name: telegram
 description: Access the user's Telegram account - list chats, read recent messages, search a chat or all chats, and show the messages around a given message. Use when the user asks to check, find, quote, or summarize something from their Telegram chats, groups, or channels. Currently read-only - it cannot send, edit, delete, or mark anything as read.
 ---
 
-# Telegram reader
+# Telegram
 
 All access goes through one CLI: `scripts/tg.py` inside this skill's directory. Call it by its absolute path. It runs on `uv`, which installs the Python dependencies on first use.
 
