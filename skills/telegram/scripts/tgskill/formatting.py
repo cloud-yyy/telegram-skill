@@ -21,6 +21,30 @@ def sender_name(msg):
     return entity_name(msg.sender) or msg.post_author or (f"id{msg.sender_id}" if msg.sender_id else "?")
 
 
+def human_size(n):
+    if not n:
+        return ""
+    for unit in ("B", "KB", "MB"):
+        if n < 1024 or unit == "MB":
+            return f"{n:.0f}{unit}" if unit == "B" else f"{n:.1f}{unit}"
+        n /= 1024
+
+
+def media_kind(msg):
+    """Downloadable media class of a message, or None."""
+    if not msg.media or isinstance(msg.media, types.MessageMediaWebPage):
+        return None
+    for kind in ("photo", "voice", "video_note", "gif", "video", "sticker", "audio", "document"):
+        if getattr(msg, kind):
+            return kind
+    return None
+
+
+def size_suffix(msg):
+    size = human_size(msg.file.size)
+    return f", {size}" if size else ""
+
+
 def media_tag(msg):
     if isinstance(msg, types.MessageService) or msg.action:
         return f"[service: {type(msg.action).__name__.removeprefix('MessageAction')}]"
@@ -35,13 +59,13 @@ def media_tag(msg):
     if msg.gif:
         return "[gif]"
     if msg.video:
-        return "[video]"
+        return f"[video{size_suffix(msg)}]"
     if msg.sticker:
         return f"[sticker {msg.file.emoji or ''}]".replace(" ]", "]")
     if msg.audio:
-        return f"[audio: {msg.file.title or msg.file.name or 'untitled'}]"
+        return f"[audio: {msg.file.title or msg.file.name or 'untitled'}{size_suffix(msg)}]"
     if msg.document:
-        return f"[file: {msg.file.name or 'unnamed'}]"
+        return f"[file: {msg.file.name or 'unnamed'}{size_suffix(msg)}]"
     if msg.poll:
         q = msg.poll.poll.question
         return f"[poll: {getattr(q, 'text', q)}]"
@@ -73,6 +97,9 @@ def message_record(msg, chat=None):
         "reply_to": msg.reply_to_msg_id,
         "forwarded_from": forward_label(msg),
         "media": media_tag(msg),
+        "media_kind": media_kind(msg),
+        "media_size": msg.file.size if media_kind(msg) else None,
+        "media_mime": msg.file.mime_type if media_kind(msg) else None,
         "text": msg.message or "",
     }
 

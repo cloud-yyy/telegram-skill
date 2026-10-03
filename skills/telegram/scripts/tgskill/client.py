@@ -34,11 +34,11 @@ def make_client(allowed, api_id, api_hash, receive_updates=False):
     return client
 
 
-async def open_client():
+async def open_client(allowed=READ_METHODS):
     api_id, api_hash = load_api_credentials()
     if not api_id or not api_hash:
         raise CliError("not configured; run `tg.py login` first")
-    client = make_client(READ_METHODS, api_id, api_hash)
+    client = make_client(allowed, api_id, api_hash)
     await client.connect()
     if not await client.is_user_authorized():
         await client.disconnect()

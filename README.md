@@ -1,6 +1,6 @@
 ![telegram-skill: Telegram for AI agents](assets/cover.png)
 
-Telegram access for AI agents. Your agent can list chats, read history, search messages, and pull up the conversation around a result.
+Telegram access for AI agents. Your agent can list chats, read history, search messages, pull up the conversation around a result, and download photos and documents so the agent can analyze them.
 
 For now it only reads: sending is planned.
 
@@ -10,7 +10,7 @@ Works with Claude Code, Codex, Cursor, Gemini CLI, and other agents that support
 
 Until sending lands, two things keep the agent to reading:
 
-- **Allowlist in the client.** Every request to Telegram passes a list of about 20 read methods ([guard.py](skills/telegram/scripts/tgskill/guard.py)). Anything else fails before it leaves your machine. The CLI has no write commands to begin with.
+- **Allowlist in the client.** Every request to Telegram passes a list of about 20 read methods (plus file download, only for the `download` command) ([guard.py](skills/telegram/scripts/tgskill/guard.py)). Anything else fails before it leaves your machine. The CLI has no write commands to begin with.
 - **Hook for the agent.** Plugin installs add a `PreToolUse` hook that blocks the agent from reading the session files or editing the CLI ([protect_session.py](hooks/protect_session.py)).
 
 The hook is a guard rail, not a sandbox. The session file lives under your OS user and grants full account access. You can revoke it any time in Telegram: Settings → Devices.

@@ -1,7 +1,7 @@
 {
   "name": "telegram",
   "version": "0.1.0",
-  "description": "Telegram for AI agents: list chats, read history, search messages, and see the context around them.",
+  "description": "Telegram for AI agents: list chats, read history, search messages, see the context around them, and download media to analyze.",
   "author": { "name": "cloud-yyy", "url": "https://github.com/cloud-yyy" },
   "homepage": "https://github.com/cloud-yyy/telegram-skill",
   "repository": "https://github.com/cloud-yyy/telegram-skill",

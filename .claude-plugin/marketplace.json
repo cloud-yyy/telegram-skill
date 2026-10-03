@@ -6,7 +6,7 @@
     {
       "name": "telegram",
       "source": "./",
-      "description": "Telegram for AI agents: list chats, read history, search messages, and see the context around them.",
+      "description": "Telegram for AI agents: list chats, read history, search messages, see the context around them, and download media to analyze.",
       "category": "productivity"
     }
   ]
