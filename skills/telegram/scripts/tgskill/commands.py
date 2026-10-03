@@ -1,13 +1,16 @@
 """Read commands: whoami, chats, history, search, context."""
 
 import json
+import mimetypes
+import os
 import re
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from telethon import utils
 
 from .client import CliError, resolve_chat
-from .formatting import entity_name, message_record, print_messages
+from .formatting import entity_name, human_size, media_kind, message_record, print_messages
 
 
 def parse_when(value, end_of_day=False):
@@ -132,3 +135,72 @@ async def cmd_context(client, args):
     if not target:
         header += " (target message not found or deleted)"
     print_messages(args, header, [message_record(m, chat) for m in msgs], marker_id=msg_id)
+
+
+MEDIA_DIR = Path(os.environ.get("TG_SKILL_MEDIA") or Path.home() / ".cache" / "telegram-skill" / "media")
+
+
+def safe_ext(msg, thumb):
+    if thumb:
+        return ".jpg"
+    ext = Path(msg.file.name or "").suffix if msg.file.name else ""
+    if not re.fullmatch(r"\.[A-Za-z0-9]{1,8}", ext):
+        ext = msg.file.ext or mimetypes.guess_extension(msg.file.mime_type or "") or ""
+    return ext if re.fullmatch(r"\.[A-Za-z0-9]{1,8}", ext) else ""
+
+
+async def download_one(client, msg, chat_id, out_dir, max_bytes, thumb):
+    kind = media_kind(msg)
+    rec = {"id": msg.id, "kind": kind, "name": msg.file.name if kind else None}
+    if not kind:
+        return {**rec, "error": "no downloadable media"}
+    size = msg.file.size
+    rec["size"] = size
+    rec["mime"] = msg.file.mime_type
+    if not thumb and size and size > max_bytes:
+        return {**rec, "error": f"file is {human_size(size)}, over the limit of {human_size(max_bytes)}; "
+                                "raise --max-size or use --thumb"}
+    # The name is built from ids only: sender-supplied file names never reach the disk.
+    path = out_dir / f"{chat_id}_{msg.id}{'_thumb' if thumb else ''}{safe_ext(msg, thumb)}"
+    if not (path.exists() and path.stat().st_size > 0):
+        out_dir.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".part")
+        got = await client.download_media(msg, file=str(tmp), thumb=-1 if thumb else None)
+        if not got:
+            tmp.unlink(missing_ok=True)
+            return {**rec, "error": "Telegram returned no data" + (" (no thumbnail)" if thumb else "")}
+        os.replace(got, path)
+    return {**rec, "path": str(path), "bytes": path.stat().st_size}
+
+
+async def cmd_download(client, args):
+    if args.msg_id is None:
+        link = parse_message_link(args.target)
+        if not link:
+            raise CliError("pass CHAT MSG_ID or a t.me message link")
+        chat_ref, msg_id = link
+    else:
+        chat_ref, msg_id = args.target, args.msg_id
+    chat = await resolve_chat(client, chat_ref)
+    chat_id = utils.get_peer_id(chat)
+    msg = await client.get_messages(chat, ids=msg_id)
+    if not msg:
+        raise CliError(f"message #{msg_id} not found in {entity_name(chat)}")
+    msgs = [msg]
+    if args.album and msg.grouped_id:
+        near = [m async for m in client.iter_messages(chat, limit=20, min_id=msg_id - 11, max_id=msg_id + 11)]
+        msgs = sorted((m for m in near if m.grouped_id == msg.grouped_id), key=lambda m: m.id)
+    out_dir = Path(args.out).expanduser() if args.out else MEDIA_DIR
+    results = [await download_one(client, m, chat_id, out_dir, int(args.max_size * 1024 * 1024), args.thumb)
+               for m in msgs]
+    if args.json:
+        print(json.dumps(results, ensure_ascii=False, indent=1))
+    else:
+        for r in results:
+            if "error" in r:
+                print(f"#{r['id']}: error: {r['error']}")
+            else:
+                extra = f", original name {r['name']!r}" if r["name"] else ""
+                print(f"#{r['id']} {r['kind']} {r['mime'] or ''} {human_size(r['bytes'])}{extra}\n  {r['path']}")
+    if all("error" in r for r in results):
+        raise CliError("nothing downloaded")

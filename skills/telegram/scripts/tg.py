@@ -3,7 +3,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["telethon>=1.40,<2", "qrcode>=7"]
 # ///
-"""Read-only Telegram CLI for AI agents.
+"""Read-only Telegram CLI for AI agents (`download` saves media locally).
 
 Every MTProto request leaving this process is checked against READ_METHODS.
 Anything else (sending, editing, deleting, marking as read, joining, ...)
@@ -19,6 +19,7 @@ Usage:
   tg.py search QUERY [--chat CHAT] [--from WHO] [--limit N]
                      [--since WHEN] [--until WHEN]
   tg.py context (CHAT MSG_ID | LINK) [--before N] [--after N]
+  tg.py download (CHAT MSG_ID | LINK) [--out DIR] [--max-size MB] [--thumb] [--album]
 
 CHAT is a title (or part of it), @username, t.me link, numeric id, or "me".
 WHEN is YYYY-MM-DD, "YYYY-MM-DD HH:MM", or relative: 30m, 12h, 7d.
@@ -35,8 +36,8 @@ import sys
 from telethon import errors
 
 from tgskill.client import CliError, open_client
-from tgskill.commands import cmd_chats, cmd_context, cmd_history, cmd_search, cmd_whoami
-from tgskill.guard import ReadOnlyViolation
+from tgskill.commands import cmd_chats, cmd_context, cmd_download, cmd_history, cmd_search, cmd_whoami
+from tgskill.guard import DOWNLOAD_METHODS, READ_METHODS, ReadOnlyViolation
 from tgskill.login import cmd_login
 
 
@@ -80,17 +81,25 @@ def build_parser():
     s.add_argument("msg_id", type=int, nargs="?")
     s.add_argument("--before", type=int, default=10)
     s.add_argument("--after", type=int, default=10)
+
+    s = sub.add_parser("download", parents=[common], help="save a message's media to disk for analysis")
+    s.add_argument("target", help="chat, or a t.me message link")
+    s.add_argument("msg_id", type=int, nargs="?")
+    s.add_argument("--out", help="output directory (default ~/.cache/telegram-skill/media)")
+    s.add_argument("--max-size", type=float, default=20, help="refuse files larger than this many MB (default 20)")
+    s.add_argument("--thumb", action="store_true", help="only the preview image (cheap for videos)")
+    s.add_argument("--album", action="store_true", help="every item of the message's album")
     return p
 
 
 COMMANDS = {"whoami": cmd_whoami, "chats": cmd_chats, "history": cmd_history,
-            "search": cmd_search, "context": cmd_context}
+            "search": cmd_search, "context": cmd_context, "download": cmd_download}
 
 
 async def run(args):
     if args.command == "login":
         return await cmd_login(args)
-    client = await open_client()
+    client = await open_client(DOWNLOAD_METHODS if args.command == "download" else READ_METHODS)
     try:
         await COMMANDS[args.command](client, args)
     finally:
